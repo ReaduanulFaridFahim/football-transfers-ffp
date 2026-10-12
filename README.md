@@ -80,3 +80,9 @@ rule_breaks = get_single_season_rule_breaks(
 )
 print(rule_breaks)
 ```
+
+---
+
+## 👤 Author
+**Readuanul Farid Fahim @ 2026**
+*Football Transfer & Financial Fair Play Intelligence System*
