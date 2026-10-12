@@ -73,6 +73,17 @@ function setupNavigation() {
       }, 50);
     });
   });
+
+  // Support direct linking via ?tab= or hash e.g. ?tab=section-mancity
+  const urlParams = new URLSearchParams(window.location.search);
+  const initialTarget = urlParams.get('tab') || window.location.hash.slice(1);
+  if (initialTarget) {
+    const matchingBtn = document.querySelector(`.nav-tab-btn[data-target="${initialTarget}"]`);
+    if (matchingBtn) {
+      matchingBtn.click();
+      setTimeout(() => window.scrollTo(0, 0), 10);
+    }
+  }
 }
 
 // Setup Interactive Controls & Sliders
