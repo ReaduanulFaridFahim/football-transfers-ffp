@@ -1,0 +1,17 @@
+# Python virtual environments & bytecode
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Large Raw CSV Datasets (>100MB exceeds GitHub push limits)
+# These files are extracted locally from Kaggle (davidcariboo/player-scores)
+data/
+*.csv
+
+# OS & IDE artifacts
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

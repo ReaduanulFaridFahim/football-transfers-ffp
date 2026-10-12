@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Football Transfer & Financial Fair Play (FFP) Intelligence Dashboard</title>
+  <meta name="description" content="Interactive dashboard analyzing 20 years of football transfer spending, net transfer deficits, and Financial Fair Play (FFP) regulatory rule breaks.">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Top Header Navigation -->
+  <header class="header-bar">
+    <div class="header-container">
+      <div class="logo-group">
+        <div class="logo-badge">⚽</div>
+        <div class="logo-title">
+          <h1>TransferFairPlay<span style="color: var(--accent-cyan);">.AI</span></h1>
+          <p>Transfermarkt 20-Year Spending & Financial Regulation Analytics</p>
+        </div>
+      </div>
+
+      <nav class="nav-tabs" role="tablist">
+        <button id="nav-btn-overview" class="nav-tab-btn active" data-target="section-overview">
+          📊 FFP Overview
+        </button>
+        <button id="nav-btn-seasons" class="nav-tab-btn" data-target="section-seasons">
+          ⚡ Season Breaches
+        </button>
+        <button id="nav-btn-market" class="nav-tab-btn" data-target="section-market">
+          📈 Market Inflation & Deals
+        </button>
+        <button id="nav-btn-inspector" class="nav-tab-btn" data-target="section-inspector">
+          🔍 Club Inspector
+        </button>
+        <button id="nav-btn-mancity" class="nav-tab-btn" data-target="section-mancity" style="color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.35);">
+          ⚖️ Man City Case & Ban
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="app-main">
+
+    <!-- Interactive Regulatory Controllers Banner -->
+    <section class="control-banner" id="ffp-controls-banner">
+      <!-- 20-Year Cumulative Net Deficit Threshold -->
+      <div class="control-item">
+        <div class="control-label">
+          <span>🏛️ 20-Year Cumulative Deficit Limit</span>
+          <span id="limit-badge-20y" class="control-val-badge">€1,000M</span>
+        </div>
+        <div class="slider-container">
+          <input type="range" id="slider-limit-20y" min="200" max="2000" step="50" value="1000">
+        </div>
+        <div style="font-size: 0.72rem; color: var(--text-muted); display: flex; justify-content: space-between;">
+          <span>€200M (Strict)</span>
+          <span>€1.0B (Standard)</span>
+          <span>€2.0B (Relaxed)</span>
+        </div>
+      </div>
+
+      <div class="control-divider"></div>
+
+      <!-- Single Season Net Deficit Threshold & Filters -->
+      <div class="control-item">
+        <div class="control-label">
+          <span>⚠️ Single-Season Deficit Limit</span>
+          <span id="limit-badge-season" class="control-val-badge">€100M</span>
+        </div>
+        <div class="slider-container">
+          <input type="range" id="slider-limit-season" min="30" max="300" step="10" value="100">
+        </div>
+        <div style="font-size: 0.72rem; color: var(--text-muted); display: flex; justify-content: space-between;">
+          <span>€30M (UEFA FFP baseline)</span>
+          <span>€100M</span>
+          <span>€300M</span>
+        </div>
+      </div>
+
+      <div class="control-divider"></div>
+
+      <!-- Quick Filters & Timeframe -->
+      <div class="control-item">
+        <div class="control-label">
+          <span>⚙️ Timeframe & League Scope</span>
+        </div>
+        <div class="filter-group">
+          <select id="select-timeframe" class="filter-select">
+            <option value="20y" selected>Last 20 Years (2005 - 2026)</option>
+            <option value="10y">Last 10 Years (2015 - 2026)</option>
+            <option value="5y">Last 5 Years (2020 - 2026)</option>
+          </select>
+          <select id="select-league" class="filter-select">
+            <option value="ALL" selected>All Leagues</option>
+            <option value="Premier League (England)">Premier League</option>
+            <option value="LaLiga (Spain)">LaLiga</option>
+            <option value="Serie A (Italy)">Serie A</option>
+            <option value="Bundesliga (Germany)">Bundesliga</option>
+            <option value="Ligue 1 (France)">Ligue 1</option>
+            <option value="Saudi Pro League">Saudi Pro League</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- KPI Metric Cards Grid -->
+    <section class="kpi-grid">
+      <div class="kpi-card kpi-primary">
+        <div class="kpi-header">
+          <span class="kpi-title">Total Market Spend</span>
+          <span class="kpi-icon">💰</span>
+        </div>
+        <div class="kpi-value" id="kpi-total-spend">€0.0B</div>
+        <div class="kpi-subtitle" id="kpi-spend-subtitle">Across top tracked clubs</div>
+      </div>
+
+      <div class="kpi-card kpi-warning">
+        <div class="kpi-header">
+          <span class="kpi-title">Total Net Deficit</span>
+          <span class="kpi-icon">📉</span>
+        </div>
+        <div class="kpi-value" id="kpi-total-deficit">€0.0B</div>
+        <div class="kpi-subtitle">Unrecovered transfer expenditure</div>
+      </div>
+
+      <div class="kpi-card kpi-danger">
+        <div class="kpi-header">
+          <span class="kpi-title">Clubs in Breach Risk</span>
+          <span class="kpi-icon">🚨</span>
+        </div>
+        <div class="kpi-value" id="kpi-breach-count" style="color: var(--status-breach);">0</div>
+        <div class="kpi-subtitle" id="kpi-breach-subtitle">Exceeding cumulative deficit limit</div>
+      </div>
+
+      <div class="kpi-card kpi-danger">
+        <div class="kpi-header">
+          <span class="kpi-title">Record Season Deficit</span>
+          <span class="kpi-icon">🔥</span>
+        </div>
+        <div class="kpi-value" id="kpi-worst-season" style="font-size: 1.55rem; color: #fca5a5;">Chelsea (22/23)</div>
+        <div class="kpi-subtitle" id="kpi-worst-season-val">-€557.2M Net Loss</div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         SECTION 1: OVERVIEW & FFP STANDINGS
+         ==================================================================== -->
+    <section id="section-overview" class="content-section active">
+      <!-- Special Investigation Alert Banner -->
+      <div style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(15, 23, 42, 0.8) 100%); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: var(--radius-md); padding: 1rem 1.4rem; margin-bottom: 1.75rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+        <div style="display: flex; align-items: center; gap: 0.85rem;">
+          <span style="font-size: 1.6rem;">🚨</span>
+          <div>
+            <strong style="color: #fff; font-size: 0.95rem;">Special Case Dossier: Why Did Man City Get Banned & Hit with 115 Charges?</strong>
+            <p style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 2px;">
+              UEFA issued a 2-year Champions League ban for disguised owner funding. The Premier League followed with 115 financial breaches.
+            </p>
+          </div>
+        </div>
+        <button id="btn-quick-mancity" style="background: var(--status-breach); border: none; color: #fff; padding: 0.5rem 1.15rem; border-radius: var(--radius-sm); font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: var(--transition);">
+          View Full Man City Investigation →
+        </button>
+      </div>
+
+      <div class="grid-2col">
+        <!-- Main Spend vs Income vs Deficit Chart -->
+        <div class="dashboard-card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h2>Transfer Spend vs. Income & Net Deficit</h2>
+              <p class="card-subtitle">Clubs sorted by gross expenditure with interactive threshold marker</p>
+            </div>
+          </div>
+          <div class="chart-wrapper">
+            <canvas id="chart-top-spenders"></canvas>
+          </div>
+        </div>
+
+        <!-- League Distribution of Deficit -->
+        <div class="dashboard-card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h2>Net Transfer Deficit by League</h2>
+              <p class="card-subtitle">Distribution of market financial exposure</p>
+            </div>
+          </div>
+          <div class="chart-wrapper">
+            <canvas id="chart-league-pie"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Financial Regulatory Audit Standings Table -->
+      <div class="dashboard-card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h2>Financial Fair Play Regulatory Standings</h2>
+            <p class="card-subtitle">Live compliance verification: green indicates compliance, red indicates regulatory breach risk</p>
+          </div>
+          <input type="text" id="search-clubs" class="search-input" placeholder="🔍 Search club...">
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table" id="table-regulatory-standings">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Club</th>
+                <th>League</th>
+                <th>Gross Spend (€M)</th>
+                <th>Sales Income (€M)</th>
+                <th>Net Deficit (€M)</th>
+                <th>Threshold (€M)</th>
+                <th>FFP Status</th>
+                <th>Amount Over Limit (€M)</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-standings">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         SECTION 2: SEASON BREAKDOWN & RULE BREACHES
+         ==================================================================== -->
+    <section id="section-seasons" class="content-section">
+      <div class="dashboard-card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h2>20-Year Club Net Deficit Trajectory (2005 - 2026)</h2>
+            <p class="card-subtitle">Year-by-year transfer spending spikes for elite clubs</p>
+          </div>
+          <div style="font-size: 0.8rem; color: var(--text-secondary);">
+            Click legend items to toggle clubs
+          </div>
+        </div>
+        <div class="chart-wrapper" style="height: 420px;">
+          <canvas id="chart-trajectory-timeline"></canvas>
+        </div>
+      </div>
+
+      <div class="dashboard-card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h2>Single-Season Transfer Window Rule Breakers</h2>
+            <p class="card-subtitle">Seasons where a club's net loss exceeded the single-season regulatory limit</p>
+          </div>
+          <input type="text" id="search-violations" class="search-input" placeholder="🔍 Filter season or club...">
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Club</th>
+                <th>Season</th>
+                <th>League</th>
+                <th>Spend (€M)</th>
+                <th>Income (€M)</th>
+                <th>Net Deficit (€M)</th>
+                <th>Season Limit (€M)</th>
+                <th>Deficit Exceeded (€M)</th>
+                <th>Rule Alert</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-violations">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         SECTION 3: MARKET INFLATION & RECORD DEALS
+         ==================================================================== -->
+    <section id="section-market" class="content-section">
+      <div class="dashboard-card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h2>European Football Transfer Market Inflation (2005 - 2026)</h2>
+            <p class="card-subtitle">Annual aggregate transfer spending showing explosive market expansion</p>
+          </div>
+        </div>
+        <div class="chart-wrapper">
+          <canvas id="chart-market-inflation"></canvas>
+        </div>
+      </div>
+
+      <div class="dashboard-card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h2>Top 50 Most Expensive Transfers in Football History</h2>
+            <p class="card-subtitle">All-time record transfer fees from Transfermarkt</p>
+          </div>
+          <input type="text" id="search-transfers" class="search-input" placeholder="🔍 Search player or club...">
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Player</th>
+                <th>Season</th>
+                <th>Date</th>
+                <th>From Club</th>
+                <th>To Club</th>
+                <th>Transfer Fee (€M)</th>
+                <th>Market Value at Transfer (€M)</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-top-transfers">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         SECTION 4: CLUB DEEP DIVE INSPECTOR
+         ==================================================================== -->
+    <section id="section-inspector" class="content-section">
+      <div class="dashboard-card" style="margin-bottom: 1.5rem;">
+        <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+          <label for="select-inspector-club" style="font-weight: 600; font-size: 0.9rem;">Select Club to Audit:</label>
+          <select id="select-inspector-club" class="filter-select" style="min-width: 260px; font-size: 0.95rem;">
+            <!-- Populated dynamically -->
+          </select>
+        </div>
+      </div>
+
+      <div class="inspector-grid">
+        <!-- Club Profile Card -->
+        <div class="inspector-profile">
+          <div class="inspector-profile-header">
+            <div class="inspector-avatar-large" id="insp-avatar">⚽</div>
+            <h2 id="insp-name" style="font-family: 'Outfit'; font-size: 1.4rem;">Chelsea</h2>
+            <p id="insp-league" style="color: var(--text-secondary); font-size: 0.82rem;">Premier League (England)</p>
+            <div id="insp-status-badge" style="margin-top: 0.75rem;">
+              <span class="badge badge-breach"><span class="badge-pulse-dot"></span> FFP BREACH RISK</span>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            <div class="inspector-stat-row">
+              <span style="color: var(--text-secondary);">Gross Spent:</span>
+              <strong id="insp-spent" style="color: #fff;">€3,005.2M</strong>
+            </div>
+            <div class="inspector-stat-row">
+              <span style="color: var(--text-secondary);">Player Sales Income:</span>
+              <strong id="insp-income" style="color: #fff;">€1,384.5M</strong>
+            </div>
+            <div class="inspector-stat-row">
+              <span style="color: var(--text-secondary);">Net Transfer Deficit:</span>
+              <strong id="insp-deficit" class="val-positive">€1,620.7M</strong>
+            </div>
+            <div class="inspector-stat-row">
+              <span style="color: var(--text-secondary);">Regulatory Limit:</span>
+              <strong id="insp-limit" style="color: var(--accent-cyan);">€1,000.0M</strong>
+            </div>
+            <div class="inspector-stat-row">
+              <span style="color: var(--text-secondary);">Excess Deficit:</span>
+              <strong id="insp-excess" style="color: var(--status-breach);">€620.7M</strong>
+            </div>
+            <div class="inspector-stat-row">
+              <span style="color: var(--text-secondary);">Seasons with Deficit &gt; €100M:</span>
+              <strong id="insp-breach-seasons" style="color: #fca5a5;">4 Seasons</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Club Season Chart -->
+        <div class="dashboard-card" style="margin-bottom: 0;">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h2 id="insp-chart-title">Chelsea: 20-Year Financial Trajectory</h2>
+              <p class="card-subtitle">Season-by-season breakdown of transfer spending, sales, and net balance</p>
+            </div>
+          </div>
+          <div class="chart-wrapper" style="height: 360px;">
+            <canvas id="chart-club-trajectory"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         SECTION 5: MANCHESTER CITY 115 CHARGES & UEFA BAN DOSSIER
+         ==================================================================== -->
+    <section id="section-mancity" class="content-section">
+      <!-- Hero Dossier Card -->
+      <div class="mancity-hero-card">
+        <div class="hero-badge-tag">
+          <span>⚖️ Regulatory Investigation Dossier</span>
+        </div>
+        <h2 class="mancity-hero-title">The Manchester City FFP Case: Why They Got Banned & The 115 Charges</h2>
+        <p class="mancity-hero-desc">
+          Manchester City is at the center of the largest financial fair play dispute in sports history. 
+          Between 2008 and 2026, the club spent over <strong>€2.48 Billion</strong> on player transfers, running a staggering <strong>€1.50 Billion net transfer deficit</strong>. 
+          Regulatory bodies investigated allegations that owner equity was disguised as commercial sponsorship to artificially inflate revenues and bypass UEFA and Premier League spending limits.
+        </p>
+      </div>
+
+      <!-- Investigation Timeline Flow -->
+      <div class="dashboard-card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h2>Chronology: From Football Leaks to European Ban & 115 Charges</h2>
+            <p class="card-subtitle">Key legal milestones and rulings in Manchester City's financial fair play battles</p>
+          </div>
+        </div>
+        <div class="timeline-flow">
+          <div class="timeline-step">
+            <span class="timeline-year-badge">November 2018</span>
+            <div class="timeline-step-title">📰 The Football Leaks Revelations</div>
+            <p class="timeline-step-text">
+              German magazine <em>Der Spiegel</em> published leaked internal club emails alleging owner Sheikh Mansour's holding company (ADUG) was secretly funding £59.5M of Etihad's £67.5M sponsorship deal.
+            </p>
+          </div>
+
+          <div class="timeline-step" style="border-left: 3px solid var(--status-breach);">
+            <span class="timeline-year-badge" style="background: var(--status-breach-bg); color: #fca5a5;">February 2020</span>
+            <div class="timeline-step-title">🚫 UEFA Issues 2-Year Champions League Ban</div>
+            <p class="timeline-step-text">
+              UEFA's Club Financial Control Body (CFCB) found Man City guilty of "serious breaches" of FFP, issuing a <strong>2-year ban from European competitions</strong> and a <strong>€30M fine</strong>.
+            </p>
+          </div>
+
+          <div class="timeline-step" style="border-left: 3px solid var(--status-warn);">
+            <span class="timeline-year-badge" style="background: var(--status-warn-bg); color: #fcd34d;">July 2020</span>
+            <div class="timeline-step-title">⚖️ CAS Overturns Ban on "Time-Barred" Technicality</div>
+            <p class="timeline-step-text">
+              The Court of Arbitration for Sport (CAS) overturned the ban because UEFA's 5-year statute of limitations expired on the older emails. CAS still upheld a <strong>€10M fine</strong> for non-cooperation.
+            </p>
+          </div>
+
+          <div class="timeline-step" style="border-left: 3px solid var(--accent-cyan);">
+            <span class="timeline-year-badge">February 2023 - Present</span>
+            <div class="timeline-step-title">⚡ Premier League Charges 115 Breaches</div>
+            <p class="timeline-step-text">
+              The Premier League referred Man City to an independent commission with <strong>115 alleged rule violations</strong> spanning 9 seasons. Crucially, <em>Premier League rules have NO statute of limitations</em>.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Financial Metrics of the Charged Era -->
+      <div class="kpi-grid" style="margin-bottom: 2rem;">
+        <div class="kpi-card kpi-danger">
+          <div class="kpi-header">
+            <span class="kpi-title">Investigated Era Spend (2008-2018)</span>
+            <span class="kpi-icon">💸</span>
+          </div>
+          <div class="kpi-value" style="color: #fca5a5;">€1,034.6M</div>
+          <div class="kpi-subtitle">Spent on transfers during the 9 charged seasons</div>
+        </div>
+
+        <div class="kpi-card kpi-danger">
+          <div class="kpi-header">
+            <span class="kpi-title">20-Year Net Deficit</span>
+            <span class="kpi-icon">📉</span>
+          </div>
+          <div class="kpi-value" style="color: var(--status-breach);">-€1,497.1M</div>
+          <div class="kpi-subtitle">2nd highest deficit in world football history</div>
+        </div>
+
+        <div class="kpi-card kpi-primary">
+          <div class="kpi-header">
+            <span class="kpi-title">Total Premier League Charges</span>
+            <span class="kpi-icon">📋</span>
+          </div>
+          <div class="kpi-value" style="color: #38bdf8;">115</div>
+          <div class="kpi-subtitle">Across 5 distinct regulatory categories</div>
+        </div>
+
+        <div class="kpi-card kpi-warning">
+          <div class="kpi-header">
+            <span class="kpi-title">Investigated Time Window</span>
+            <span class="kpi-icon">⏱️</span>
+          </div>
+          <div class="kpi-value" style="font-size: 1.6rem; color: #fde68a;">9 Seasons</div>
+          <div class="kpi-subtitle">2009/10 through 2017/18</div>
+        </div>
+      </div>
+
+      <!-- The 115 Charges Breakdown -->
+      <div class="dashboard-card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h2>Detailed Breakdown of the 115 Premier League Charges</h2>
+            <p class="card-subtitle">Every specific allegation brought by the Premier League independent investigation</p>
+          </div>
+        </div>
+        <div class="charges-container" id="mancity-charges-container">
+          <!-- Populated dynamically or inline -->
+        </div>
+      </div>
+
+      <!-- Potential Sanctions Risk Meter -->
+      <div class="dashboard-card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h2>Potential Penalties & Sanctions Under Premier League Rules</h2>
+            <p class="card-subtitle">If found guilty by the independent commission, punishments are uncapped</p>
+          </div>
+        </div>
+        <div class="sanctions-grid" id="mancity-sanctions-container">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- Marquee Signings During Investigated Era -->
+      <div class="dashboard-card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h2>Key Transfers Signed During the Investigated Era (2008 - 2018)</h2>
+            <p class="card-subtitle">Major player acquisitions financed during the seasons under regulatory audit</p>
+          </div>
+        </div>
+        <div class="charged-transfers-list" id="mancity-transfers-container">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- Economic Reality: Why FFP Rules Exist -->
+      <div class="dashboard-card" style="background: rgba(15, 23, 42, 0.9); border-color: rgba(56, 189, 248, 0.3);">
+        <h3 style="font-family: 'Outfit'; font-size: 1.15rem; color: #fff; margin-bottom: 0.5rem;">
+          💡 Why Did This Trigger Regulatory Bans? (The Core FFP Principle)
+        </h3>
+        <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">
+          Under <strong>UEFA Financial Fair Play (FFP)</strong> and <strong>Premier League Profitability and Sustainability Rules (PSR)</strong>, 
+          clubs can only spend money that they earn organically through matchday tickets, TV broadcasting rights, and legitimate commercial sponsorship. 
+          If owners channel private wealth into their clubs by disguising it as sponsor revenue from affiliated state entities, 
+          the club appears to have much higher revenues than it actually generates. This allows them to outbid, outpay, and outspend competitor clubs on players while evading FFP deficits, 
+          fundamentally distorting sporting integrity.
+        </p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    <div>
+      Football Transfer Intelligence System &copy; 2026. Built with Transfermarkt data.
+    </div>
+    <div>
+      Source: <a href="https://www.kaggle.com/datasets/davidcariboo/player-scores" target="_blank" rel="noopener">Kaggle (davidcariboo/player-scores)</a>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
