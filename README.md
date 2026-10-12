@@ -1,4 +1,9 @@
-# Football Transfer & Financial Fair Play (FFP) Analysis
+# ⚽ Football Transfer & Financial Fair Play (FFP) Intelligence Dashboard
+
+[![Live Demo](https://img.shields.io/badge/Live_Demo-GitHub_Pages-brightgreen?style=for-the-badge&logo=github)](https://readuanulfaridfahim.github.io/football-transfers-ffp/)
+[![Repository](https://img.shields.io/badge/GitHub-Repository-blue?style=for-the-badge&logo=github)](https://github.com/ReaduanulFaridFahim/football-transfers-ffp)
+
+🌐 **Live Hosted Dashboard**: [https://readuanulfaridfahim.github.io/football-transfers-ffp/](https://readuanulfaridfahim.github.io/football-transfers-ffp/)
 
 This project connects to and explores the Transfermarkt dataset from Kaggle:
 **[davidcariboo/player-scores](https://www.kaggle.com/datasets/davidcariboo/player-scores)**
