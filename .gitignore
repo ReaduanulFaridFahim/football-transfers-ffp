@@ -16,3 +16,5 @@ Thumbs.db
 .vscode/
 .idea/
 tactical_replacement_engine/
+catboost_info/
+scratch/

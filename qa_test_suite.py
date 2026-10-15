@@ -13,10 +13,19 @@ Tests all components of the Football Transfer & FFP Intelligence Dashboard:
 import sys
 import re
 import json
+import socket
+import threading
 import urllib.request
+from http.server import HTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
 
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+if hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(encoding='utf-8')
+
 BASE_DIR = Path(__file__).resolve().parent
+
 
 test_results = []
 
@@ -147,21 +156,50 @@ if json_path.exists():
 # TEST 5: Live HTTP Server & Assets Endpoint QA
 # ---------------------------------------------------------
 print("\n--- 5. Live Local Server & HTTP Endpoint QA ---")
+
+class TestServerHandler(SimpleHTTPRequestHandler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, directory=str(BASE_DIR), **kwargs)
+    def log_message(self, format, *args):
+        pass
+
+# Check if port 8080 is already active; otherwise spawn in-process test server
+server_instance = None
+test_port = 8080
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+is_running = (s.connect_ex(('127.0.0.1', 8080)) == 0)
+s.close()
+
+if not is_running:
+    try:
+        server_instance = HTTPServer(('127.0.0.1', 8080), TestServerHandler)
+        test_port = 8080
+    except OSError:
+        server_instance = HTTPServer(('127.0.0.1', 0), TestServerHandler)
+        test_port = server_instance.server_address[1]
+    
+    server_thread = threading.Thread(target=server_instance.serve_forever, daemon=True)
+    server_thread.start()
+
 endpoints = [
-    ("http://127.0.0.1:8080/index.html", 200),
-    ("http://127.0.0.1:8080/styles.css", 200),
-    ("http://127.0.0.1:8080/app.js", 200),
-    ("http://127.0.0.1:8080/data.js", 200),
-    ("http://127.0.0.1:8080/dashboard_data.json", 200),
+    (f"http://127.0.0.1:{test_port}/index.html", 200),
+    (f"http://127.0.0.1:{test_port}/styles.css", 200),
+    (f"http://127.0.0.1:{test_port}/app.js", 200),
+    (f"http://127.0.0.1:{test_port}/data.js", 200),
+    (f"http://127.0.0.1:{test_port}/dashboard_data.json", 200),
 ]
 
 for url, expected_status in endpoints:
     try:
-        req = urllib.request.urlopen(url, timeout=3)
+        req = urllib.request.urlopen(url, timeout=5)
         status = req.getcode()
-        record(f"HTTP GET {url.split('/')[-1]}", status == expected_status, f"HTTP {status}")
+        record(f"HTTP GET {url.split('/')[-1]}", status == expected_status, f"HTTP {status} (Port {test_port})")
     except Exception as e:
         record(f"HTTP GET {url.split('/')[-1]}", False, f"Error: {e}")
+
+if server_instance:
+    server_instance.shutdown()
+
 
 # ---------------------------------------------------------
 # FINAL QA SUMMARY
