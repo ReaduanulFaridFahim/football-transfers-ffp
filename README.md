@@ -1,4 +1,4 @@
-# ⚽ Football Transfer & Financial Fair Play (FFP) Intelligence Dashboard
+# ⚽ Football Transfer Market Prediction
 
 [![Live Demo](https://img.shields.io/badge/Live_Demo-GitHub_Pages-brightgreen?style=for-the-badge&logo=github)](https://readuanulfaridfahim.github.io/football-transfers-ffp/)
 [![Repository](https://img.shields.io/badge/GitHub-Repository-blue?style=for-the-badge&logo=github)](https://github.com/ReaduanulFaridFahim/football-transfers-ffp)
