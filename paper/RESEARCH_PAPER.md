@@ -72,48 +72,60 @@ Szymanski (2014) and Drut & Raballand (2014) analyzed the competitive distortion
 ### 3.1 The Tactical Vector Space
 Let $\mathcal{P}$ denote the universe of professional footballers and $\mathcal{M}$ denote the universe of head coaches. Each entity $i \in \mathcal{P}$ is mapped to a normalized tactical feature vector $\mathbf{x}_i \in \mathbb{R}^D$, where $D = 20$ represents fundamental per-90 performance dimensions covering finishing, playmaking, ball progression, defensive engagement, and physical durability:
 
-$$\mathbf{x}_i = \left[ g_{i,90},\; a_{i,90},\; xG_{i,90},\; xA_{i,90},\; \text{PrgP}_{i,90},\; \text{PrgC}_{i,90},\; \text{Tkl}_{i,90},\; \text{Int}_{i,90},\; \dots,\; \mu_{\text{mins}, i} \right]^T$$
+$$\mathbf{x}_i = \begin{bmatrix}
+\underbrace{g_{i,90}, a_{i,90}, xG_{i,90}, xA_{i,90}}_{\text{Direct Goal Output}} \\
+\underbrace{\mathrm{PrgP}_{i,90}, \mathrm{PrgC}_{i,90}, \mathrm{KeyP}_{i,90}}_{\text{Creation \& Progression}} \\
+\underbrace{\mathrm{Tkl}_{i,90}, \mathrm{Int}_{i,90}, \mathrm{Rec}_{i,90}}_{\text{Defensive \& Pressing}} \\
+\underbrace{\mathrm{AerW}_{i,90}, \mathrm{FlsW}_{i,90}}_{\text{Physical Duels}}, \; \underbrace{\dots, \rho_{i}}_{\text{Durability}}
+\end{bmatrix}^T$$
 
-To account for tactical position requirements, we define a role-specific weighting diagonal matrix $\mathbf{W}_{\text{role}} \in \mathbb{R}^{D \times D}$, where:
+To account for tactical position requirements, we define a role-specific weighting diagonal matrix $\mathbf{W}_{\mathrm{role}} \in \mathbb{R}^{D \times D}$, where:
 
-$$\sum_{j=1}^D W_{jj} = 1, \quad W_{jj} \ge 0 \quad \forall j$$
+$$\mathbf{W}_{\mathrm{role}} = \operatorname{diag}(w_1, w_2, \dots, w_D), \quad \text{subject to } \sum_{j=1}^D w_j = 1, \; w_j \ge 0 \; \forall j$$
 
-### 3.2 Post-Departure Tactical Void Metric ($V_{\text{void}}$)
-When a star entity $s \in \mathcal{P}$ departs from club $\mathcal{C}$, the unmitigated tactical void $V_{\text{void}}(s)$ is defined as a function of the star's tactical output, their operational reliance share $\rho_s$, and the club's pre-departure baseline performance $\bar{P}_{\mathcal{C}}$:
+### 3.2 Post-Departure Tactical Void Metric ($V_{\mathrm{void}}$)
+When a star entity $s \in \mathcal{P}$ departs from club $\mathcal{C}$, the unmitigated tactical void $V_{\mathrm{void}}(s)$ is defined as a function of the star's tactical output, their operational reliance share $\rho_s$, and the club's pre-departure baseline performance $\bar{P}_{\mathcal{C}}$:
 
-$$V_{\text{void}}(s) = \min\left(100,\; \alpha_1 \cdot \rho_s \cdot \|\mathbf{W}_{\text{role}} \mathbf{x}_s\|_2 + \alpha_2 \cdot (1 - \Delta\text{PPG}_{\text{pred}}) + \alpha_3 \cdot \frac{\text{Valuation}_s}{\bar{V}_{\text{squad}}}\right)$$
+$$V_{\mathrm{void}}(s) = \min\left(100,\; \alpha_1 \rho_s \|\mathbf{W}_{\mathrm{role}} \mathbf{x}_s\|_2 + \alpha_2 \Phi(\Delta\mathrm{PPG}_{\mathrm{pred}}) + \alpha_3 \frac{\mathrm{Val}_s}{\bar{V}_{\mathcal{C}}}\right)$$
 
 where:
-- $\rho_s = \frac{\text{Minutes Played}_s}{\text{Total Match Minutes available}}$ represents squad operational reliance.
-- $\Delta\text{PPG}_{\text{pred}} = f_{\text{ML}}(\mathbf{x}_s, \bar{P}_{\mathcal{C}}, \text{Fee}_s)$ is the predicted points-per-game drop.
-- $\alpha_1, \alpha_2, \alpha_3$ are calibrated balancing coefficients ($\sum \alpha_k = 1$).
+- $\rho_s = \frac{\text{Minutes Played}_s}{\text{Total Match Minutes available}}$ represents squad operational reliance ($\rho_s \in [0, 1]$).
+- $\Delta\mathrm{PPG}_{\mathrm{pred}} = f_{\mathrm{ML}}(\mathbf{x}_s, \rho_s, \bar{P}_{\mathcal{C}}, \mathrm{Fee}_s)$ is the predicted points-per-game drop.
+- $\Phi(\Delta\mathrm{PPG}) = 50 - 22(\Delta\mathrm{PPG})$ maps predicted points decline into a calibrated severity index.
+- $\bar{V}_{\mathcal{C}}$ is the average squad player market valuation.
+- $\alpha_1, \alpha_2, \alpha_3$ are calibrated balancing coefficients ($\sum \alpha_k = 1$; default $\alpha = [0.45, 0.35, 0.20]$).
 
-### 3.3 Role-Adaptive Cosine Similarity
+### 3.3 Role-Adaptive Tactical Vector Similarity
 Candidate compatibility between departing star $s$ and scouted candidate $c \in \mathcal{P} \setminus \{s\}$ is evaluated using the weighted cosine similarity measure:
 
-$$\text{Sim}_{\text{tactical}}(s, c) = \frac{(\mathbf{W}_{\text{role}} \mathbf{x}_s) \cdot (\mathbf{W}_{\text{role}} \mathbf{x}_c)}{\|\mathbf{W}_{\text{role}} \mathbf{x}_s\|_2 \|\mathbf{W}_{\text{role}} \mathbf{x}_c\|_2}$$
+$$\operatorname{Sim}_{\mathrm{tactical}}(s, c) = \frac{(\mathbf{W}_{\mathrm{role}} \mathbf{x}_s)^T (\mathbf{W}_{\mathrm{role}} \mathbf{x}_c)}{\|\mathbf{W}_{\mathrm{role}} \mathbf{x}_s\|_2 \|\mathbf{W}_{\mathrm{role}} \mathbf{x}_c\|_2}$$
 
-$$\text{MatchScore}(s, c) = 100 \times \left( \beta \cdot \text{Sim}_{\text{tactical}}(s, c) + (1 - \beta) \cdot \left[1 - \frac{|\text{Age}_c - \text{Age}^*|}{\text{Age}_{\max}}\right] \right)$$
+$$\operatorname{MatchScore}(s, c) = 100 \cdot \left[ \beta \operatorname{Sim}_{\mathrm{tactical}}(s, c) + (1 - \beta) \left(1 - \frac{|\mathrm{Age}_c - \mathrm{Age}^*|}{\mathrm{Age}_{\max}}\right) \right]$$
 
-where $\text{Age}^*$ represents the target planning horizon optimal age (e.g., 23 for succession planning, 27 for immediate replacement).
+where $\mathrm{Age}^*$ represents the target planning horizon optimal age (e.g., 22 for succession planning, 27 for immediate replacement), and $\beta = 0.85$.
 
 ### 3.4 Regulatory Amortization & FFP/PSR Optimization
 In compliance with international financial accounting standards (IAS 38) and UEFA FSR Article 60:
 1. **Liquidated Disposal Gain (Profit on Disposal of Registration)**:
-   $$\text{Gain}_{\text{disposal}} = \text{Fee Received}_s - \text{NBV}_s$$
-   where $\text{NBV}_s = \text{Initial Cost}_s \times \max\left(0, 1 - \frac{t_{\text{elapsed}}}{T_{\text{contract}}}\right)$.
+   $$\mathrm{Gain}_{\mathrm{disp}}(s) = \mathrm{Fee}_s - \mathrm{NBV}_s$$
+   where $\mathrm{NBV}_s = \mathrm{Cost}_s \cdot \max\left(0, 1 - \frac{t_{\mathrm{elapsed}}}{T_s}\right)$.
 2. **Replacement Annual Accounting Charge**:
-   $$\text{Cost}_{\text{annual}}(c) = \frac{\text{Acquisition Fee}_c}{T_c} + \text{Annual Gross Wage}_c$$
+   $$\mathrm{Charge}_{\mathrm{ann}}(c) = \frac{\mathrm{Fee}_c}{\min(5, T_c)} + \mathrm{Wage}_{\mathrm{ann}}(c)$$
    subject to the regulatory cap $T_c \le 5$ years.
 3. **Net Headroom Unlocked in Year 1**:
-   $$\Delta\text{Headroom}_{\text{Year 1}} = \text{Gain}_{\text{disposal}} + \text{Wage}_s - \left( \frac{\text{Acquisition Fee}_c}{T_c} + \text{Wage}_c \right)$$
+   $$\Delta\mathrm{Headroom}_{\mathrm{Y1}}(s, c) = \mathrm{Gain}_{\mathrm{disp}}(s) + \mathrm{Wage}_{\mathrm{ann}}(s) - \mathrm{Charge}_{\mathrm{ann}}(c)$$
 
 ### 3.5 Pareto Optimal Efficiency Frontier
-We define the multi-objective optimization problem:
+We formulate the recruitment decision as a bi-objective constrained optimization program:
 
-$$\max_{c \in \mathcal{P}} \quad \left[ \text{MatchScore}(s, c), \; -\text{Cost}_{\text{annual}}(c), \; \Delta\text{Headroom}_{\text{Year 1}}(s, c) \right]^T$$
+$$\max_{c \in \mathcal{P}} \quad \begin{bmatrix} \operatorname{MatchScore}(s, c) \\ -\mathrm{Cost}_{5\mathrm{yr}}(c) \end{bmatrix}$$
+$$\text{subject to} \quad \mathrm{Fee}_c \le B_{\mathrm{cap}} \cdot \mathrm{Fee}_s, \quad \mathrm{Age}_c \le \mathrm{Age}_{\max}, \quad \operatorname{MatchScore}(s, c) \ge S_{\min}$$
 
-A candidate $c^*$ is **Pareto optimal** if there exists no alternative $c'$ such that $\text{MatchScore}(s, c') \ge \text{MatchScore}(s, c^*)$ and $\text{Cost}_{\text{annual}}(c') \le \text{Cost}_{\text{annual}}(c^*)$ with at least one strict inequality.
+where $\mathrm{Cost}_{5\mathrm{yr}}(c) = \mathrm{Fee}_c + 5 \cdot \mathrm{Wage}_{\mathrm{ann}}(c)$.
+
+A candidate $c^*$ is **Pareto optimal (non-dominated)** if and only if there exists no alternative candidate $c'$ such that:
+$$\operatorname{MatchScore}(s, c') \ge \operatorname{MatchScore}(s, c^*) \quad \land \quad \mathrm{Cost}_{5\mathrm{yr}}(c') \le \mathrm{Cost}_{5\mathrm{yr}}(c^*)$$
+with at least one strict inequality.
 
 ---
 
@@ -219,11 +231,19 @@ Feature Importance (Mean |SHAP Value|):
 
 To translate micro-level tactical replacements into macro-level club outcomes, our framework executes a 10,000-run Monte Carlo tournament simulator across the 38-game league calendar.
 
-For each fixture $k \in \{1, \dots, 38\}$, the simulated points outcome $Y_k \in \{0, 1, 3\}$ is drawn from a non-homogeneous multinomial distribution parameterized by the post-replacement team expected points $\mu_k = \bar{P}_{\text{pre}} + \Delta\text{PPG}_{\text{net}}$:
+For each fixture $k \in \{1, \dots, 38\}$, the simulated points outcome $Y_k \in \{0, 1, 3\}$ is drawn from a non-homogeneous multinomial distribution parameterized by expected points $\mu_k = \bar{P}_{\mathcal{C}} + \Delta\mathrm{PPG}_{\mathrm{void}} \cdot \left(1 - \frac{\operatorname{MatchScore}(s, c)}{100}\right)$:
 
-$$P(Y_k = 3) = \frac{\mu_k}{3} \cdot (1 - \gamma), \quad P(Y_k = 1) = \gamma, \quad P(Y_k = 0) = 1 - P(Y_k = 3) - P(Y_k = 1)$$
+$$P(Y_k = y) = \begin{cases}
+\frac{\mu_k}{3}(1 - \gamma), & y = 3 \quad (\text{Win}) \\
+\gamma, & y = 1 \quad (\text{Draw}) \\
+1 - \frac{\mu_k}{3}(1 - \gamma) - \gamma, & y = 0 \quad (\text{Loss})
+\end{cases}$$
 
-where $\gamma = 0.24$ represents the empirical league draw rate.
+where $\gamma = 0.24$ represents the empirical league draw rate. The macro outcomes over $M = 10,000$ iterations are:
+
+$$P_{\mathrm{title}} = \frac{1}{M}\sum_{m=1}^M \mathbb{I}\left(\sum_{k=1}^{38} Y_{k}^{(m)} \ge 86\right), \quad P_{\mathrm{UCL}} = \frac{1}{M}\sum_{m=1}^M \mathbb{I}\left(\sum_{k=1}^{38} Y_{k}^{(m)} \ge 71\right)$$
+
+$$\Delta\mathrm{Revenue} = \left[ P_{\mathrm{UCL}}(c) - P_{\mathrm{UCL}}(\mathrm{void}) \right] \cdot \mathrm{Rev}_{\mathrm{UCL}} + \left[ \bar{Y}(c) - \bar{Y}(\mathrm{void}) \right] \cdot \mathrm{Rev}_{\mathrm{pt}}$$
 
 ```
 Monte Carlo Simulation Results (10,000 Iterations - Salah Departure Scenario):

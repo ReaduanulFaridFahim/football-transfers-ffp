@@ -99,34 +99,36 @@ The economic consequences of UEFA's Financial Fair Play regulations have been ex
 \subsection{The Tactical Vector Space}
 Let $\mathcal{P} = \{1, 2, \dots, N_P\}$ denote the universe of professional footballers and $\mathcal{M} = \{1, 2, \dots, N_M\}$ denote the universe of head coaches. Each player $i \in \mathcal{P}$ is characterized by a standardized performance vector $\mathbf{x}_i \in \mathbb{R}^D$, with dimension $D = 20$. Each element represents a normalized per-90 performance metric across five functional pillars:
 \begin{equation}
-\mathbf{x}_i = \left[ 
-\underbrace{g_{i,90}, a_{i,90}, xG_{i,90}, xA_{i,90}}_{\text{Direct Goal Output}}, 
-\underbrace{\text{PrgP}_{i,90}, \text{PrgC}_{i,90}, \text{KeyP}_{i,90}}_{\text{Creation \& Progression}}, 
-\underbrace{\text{Tkl}_{i,90}, \text{Int}_{i,90}, \text{Rec}_{i,90}}_{\text{Defensive \& Pressing}}, 
-\underbrace{\text{AerW}_{i,90}, \text{FlsW}_{i,90}}_{\text{Physical Duels}}, 
-\underbrace{\dots, \rho_{i}}_{\text{Durability}}
-\right]^T
+\begin{aligned}
+\mathbf{x}_i = \Big[ & \underbrace{g_{i,90}, a_{i,90}, xG_{i,90}, xA_{i,90}}_{\text{Direct Goal Output}}, \\
+& \underbrace{\mathrm{PrgP}_{i,90}, \mathrm{PrgC}_{i,90}, \mathrm{KeyP}_{i,90}}_{\text{Creation \& Progression}}, \\
+& \underbrace{\mathrm{Tkl}_{i,90}, \mathrm{Int}_{i,90}, \mathrm{Rec}_{i,90}}_{\text{Defensive \& Pressing}}, \\
+& \underbrace{\mathrm{AerW}_{i,90}, \mathrm{FlsW}_{i,90}}_{\text{Physical Duels}}, \; \underbrace{\dots, \rho_{i}}_{\text{Durability}} \Big]^T.
+\end{aligned}
 \end{equation}
 
-To capture tactical role heterogeneity, we define a role-specific weighting diagonal matrix $\mathbf{W}_{\text{role}} \in \mathbb{R}^{D \times D}$:
+To capture tactical role heterogeneity, we define a role-specific weighting diagonal matrix $\mathbf{W}_{\mathrm{role}} \in \mathbb{R}^{D \times D}$:
 \begin{equation}
-\mathbf{W}_{\text{role}} = \text{diag}(w_1, w_2, \dots, w_D), \quad \text{subject to } \sum_{j=1}^D w_j = 1, \; w_j \ge 0 \; \forall j
+\mathbf{W}_{\mathrm{role}} = \operatorname{diag}(w_1, w_2, \dots, w_D),
 \end{equation}
-For example, for central playmakers (e.g., Kevin De Bruyne), $w_{\text{PrgP}}$ and $w_{xA}$ receive high weights, whereas for box-to-box midfielders (e.g., Jude Bellingham), defensive recovery and progressive carry weights are amplified.
+subject to $\sum_{j=1}^D w_j = 1$ and $w_j \ge 0$ for all $j \in \{1, \dots, D\}$. For example, for central playmakers (e.g., Kevin De Bruyne), $w_{\mathrm{PrgP}}$ and $w_{xA}$ receive high weights, whereas for box-to-box midfielders (e.g., Jude Bellingham), defensive recovery and progressive carry weights are amplified.
 
-\subsection{The Post-Departure Tactical Void Metric ($V_{\text{void}}$)}
+\subsection{The Post-Departure Tactical Void Metric ($V_{\mathrm{void}}$)}
 \begin{definition}[Tactical Void]
-Let $s \in \mathcal{P}$ denote a talismanic player departing from club $\mathcal{C}$. The unmitigated post-departure Tactical Void $V_{\text{void}}(s) \in [0, 100]$ quantifies the composite sporting shock suffered by club $\mathcal{C}$:
+Let $s \in \mathcal{P}$ denote a talismanic player departing from club $\mathcal{C}$. The unmitigated post-departure Tactical Void $V_{\mathrm{void}}(s) \in [0, 100]$ quantifies the composite sporting shock suffered by club $\mathcal{C}$:
 \begin{equation}
 \label{eq:void}
-V_{\text{void}}(s) = \min\left(100, \; \alpha_1 \cdot \rho_s \cdot \|\mathbf{W}_{\text{role}} \mathbf{x}_s\|_2 + \alpha_2 \cdot \Phi(\Delta\text{PPG}_{\text{pred}}) + \alpha_3 \cdot \frac{\text{Valuation}_s}{\bar{V}_{\mathcal{C}}}\right)
+\begin{aligned}
+V_{\mathrm{void}}(s) = \min\Big(100, \; & \alpha_1 \rho_s \|\mathbf{W}_{\mathrm{role}} \mathbf{x}_s\|_2 \\
+& + \alpha_2 \Phi(\Delta\mathrm{PPG}_{\mathrm{pred}}) + \alpha_3 \frac{\mathrm{Val}_s}{\bar{V}_{\mathcal{C}}}\Big),
+\end{aligned}
 \end{equation}
 \end{definition}
 where:
 \begin{itemize}
     \item $\rho_s = \frac{\text{Minutes Played}_s}{\text{Total Available League Minutes}}$ denotes operational reliance ($\rho_s \in [0, 1]$).
-    \item $\Delta\text{PPG}_{\text{pred}} = f_{\text{ML}}(\mathbf{x}_s, \rho_s, \bar{P}_{\mathcal{C}}, \text{Fee}_s)$ is the machine learning predicted points-per-game drop.
-    \item $\Phi(\Delta\text{PPG}) = 50 - 22(\Delta\text{PPG})$ maps predicted points decline into a calibrated severity index.
+    \item $\Delta\mathrm{PPG}_{\mathrm{pred}} = f_{\mathrm{ML}}(\mathbf{x}_s, \rho_s, \bar{P}_{\mathcal{C}}, \mathrm{Fee}_s)$ is the machine learning predicted points-per-game drop.
+    \item $\Phi(\Delta\mathrm{PPG}) = 50 - 22(\Delta\mathrm{PPG})$ maps predicted points decline into a calibrated severity index.
     \item $\bar{V}_{\mathcal{C}}$ is the average squad player market valuation.
     \item $\alpha_1, \alpha_2, \alpha_3$ are calibrated balancing weights ($\sum \alpha_k = 1$; default $\alpha = [0.45, 0.35, 0.20]$).
 \end{itemize}
@@ -134,36 +136,39 @@ where:
 \subsection{Role-Adaptive Tactical Vector Similarity}
 Candidate tactical compatibility between departing talisman $s$ and candidate replacement $c \in \mathcal{P} \setminus \{s\}$ is evaluated using the role-weighted cosine similarity measure:
 \begin{equation}
-\text{Sim}_{\text{tactical}}(s, c) = \frac{(\mathbf{W}_{\text{role}} \mathbf{x}_s) \cdot (\mathbf{W}_{\text{role}} \mathbf{x}_c)}{\|\mathbf{W}_{\text{role}} \mathbf{x}_s\|_2 \|\mathbf{W}_{\text{role}} \mathbf{x}_c\|_2}
+\operatorname{Sim}_{\mathrm{tactical}}(s, c) = \frac{(\mathbf{W}_{\mathrm{role}} \mathbf{x}_s)^T (\mathbf{W}_{\mathrm{role}} \mathbf{x}_c)}{\|\mathbf{W}_{\mathrm{role}} \mathbf{x}_s\|_2 \|\mathbf{W}_{\mathrm{role}} \mathbf{x}_c\|_2}.
 \end{equation}
 To incorporate planning horizons (Immediate Like-for-Like vs. 2–3 Year Succession), we formulate the Composite Match Score:
 \begin{equation}
-\text{MatchScore}(s, c) = 100 \times \left( \beta \cdot \text{Sim}_{\text{tactical}}(s, c) + (1 - \beta) \left[1 - \frac{|\text{Age}_c - \text{Age}^*|}{\text{Age}_{\max}}\right] \right)
+\begin{aligned}
+\operatorname{MatchScore}(s, c) = 100 \cdot \Big[ & \beta \operatorname{Sim}_{\mathrm{tactical}}(s, c) \\
+& + (1 - \beta) \left(1 - \frac{|\mathrm{Age}_c - \mathrm{Age}^*|}{\mathrm{Age}_{\max}}\right) \Big],
+\end{aligned}
 \end{equation}
-where $\text{Age}^* = 27$ for immediate like-for-like replacement, $\text{Age}^* = 22$ for succession horizons, and $\beta = 0.85$.
+where $\mathrm{Age}^* = 27$ for immediate like-for-like replacement, $\mathrm{Age}^* = 22$ for succession horizons, and $\beta = 0.85$.
 
 \subsection{Regulatory Amortization Schedules (UEFA FSR \& PL PSR)}
 In strict compliance with International Financial Reporting Standards (IAS 38) and UEFA FSR Article 60, player registrations are treated as intangible fixed assets.
 
 \begin{definition}[Net Book Value Disposal Gain]
-When star $s$ is sold for gross fee $\text{Fee}_s$, the liquidated accounting profit credited immediately to club $\mathcal{C}$'s Year-1 profit-and-loss statement is:
+When star $s$ is sold for gross fee $\mathrm{Fee}_s$, the liquidated accounting profit credited immediately to club $\mathcal{C}$'s Year-1 profit-and-loss statement is:
 \begin{equation}
-\text{Gain}_{\text{disposal}}(s) = \text{Fee}_s - \text{NBV}_s
+\mathrm{Gain}_{\mathrm{disp}}(s) = \mathrm{Fee}_s - \mathrm{NBV}_s,
 \end{equation}
-where $\text{NBV}_s = \text{Initial Cost}_s \times \max\left(0, \; 1 - \frac{t_{\text{elapsed}}}{T_s}\right)$. For academy homegrown graduates, $\text{NBV}_s = 0$, generating a $100\%$ pure accounting profit on sale.
+where $\mathrm{NBV}_s = \mathrm{Cost}_s \cdot \max\left(0, \; 1 - \frac{t_{\mathrm{elapsed}}}{T_s}\right)$. For academy homegrown graduates, $\mathrm{NBV}_s = 0$, generating a $100\%$ pure accounting profit on sale.
 \end{definition}
 
 \begin{definition}[Replacement Annual Accounting Charge]
-When signing candidate replacement $c$, the transfer acquisition fee $\text{Fee}_c$ is capitalized and amortized over contract length $T_c \le 5$ years. The annual regulatory charge incurred under UEFA squad cost calculations is:
+When signing candidate replacement $c$, the transfer acquisition fee $\mathrm{Fee}_c$ is capitalized and amortized over contract length $T_c \le 5$ years. The annual regulatory charge incurred under UEFA squad cost calculations is:
 \begin{equation}
-\text{Charge}_{\text{annual}}(c) = \frac{\text{Fee}_c}{\min(5, T_c)} + \text{Wage}_{\text{annual}}(c)
+\mathrm{Charge}_{\mathrm{ann}}(c) = \frac{\mathrm{Fee}_c}{\min(5, T_c)} + \mathrm{Wage}_{\mathrm{ann}}(c).
 \end{equation}
 \end{definition}
 
 \begin{definition}[Year-1 Net Regulatory Headroom Unlocked]
 The net regulatory liquidity unlocked in Year 1 by liquidating star $s$ and recruiting replacement $c$ is:
 \begin{equation}
-\Delta\text{Headroom}_{\text{Y1}}(s, c) = \text{Gain}_{\text{disposal}}(s) + \text{Wage}_{\text{annual}}(s) - \text{Charge}_{\text{annual}}(c)
+\Delta\mathrm{Headroom}_{\mathrm{Y1}}(s, c) = \mathrm{Gain}_{\mathrm{disp}}(s) + \mathrm{Wage}_{\mathrm{ann}}(s) - \mathrm{Charge}_{\mathrm{ann}}(c).
 \end{equation}
 \end{definition}
 
@@ -171,18 +176,21 @@ The net regulatory liquidity unlocked in Year 1 by liquidating star $s$ and recr
 We formulate the recruitment decision as a bi-objective constrained optimization program:
 \begin{equation}
 \begin{aligned}
-\max_{c \in \mathcal{P}} \quad & \left[ \text{MatchScore}(s, c), \; -\text{Cost}_{5\text{yr}}(c) \right]^T \\
-\text{subject to} \quad & \text{Fee}_c \le \text{BudgetCap} \cdot \text{Fee}_s, \\
-& \text{Age}_c \le \text{Age}_{\max}, \\
-& \text{MatchScore}(s, c) \ge \text{Score}_{\min}
+\max_{c \in \mathcal{P}} \quad & \begin{bmatrix} \operatorname{MatchScore}(s, c) \\ -\mathrm{Cost}_{5\mathrm{yr}}(c) \end{bmatrix} \\
+\text{subject to} \quad & \mathrm{Fee}_c \le B_{\mathrm{cap}} \cdot \mathrm{Fee}_s, \\
+& \mathrm{Age}_c \le \mathrm{Age}_{\max}, \\
+& \operatorname{MatchScore}(s, c) \ge S_{\min},
 \end{aligned}
 \end{equation}
-where $\text{Cost}_{5\text{yr}}(c) = \text{Fee}_c + 5 \cdot \text{Wage}_{\text{annual}}(c)$.
+where $\mathrm{Cost}_{5\mathrm{yr}}(c) = \mathrm{Fee}_c + 5 \cdot \mathrm{Wage}_{\mathrm{ann}}(c)$.
 
 \begin{definition}[Non-Dominated Pareto Set]
 A candidate $c^* \in \mathcal{P}$ is Pareto optimal (non-dominated) if and only if there exists no alternative candidate $c' \in \mathcal{P}$ such that:
 \begin{equation}
-\text{MatchScore}(s, c') \ge \text{MatchScore}(s, c^*) \quad \land \quad \text{Cost}_{5\text{yr}}(c') \le \text{Cost}_{5\text{yr}}(c^*)
+\begin{aligned}
+\operatorname{MatchScore}(s, c') &\ge \operatorname{MatchScore}(s, c^*) \quad \land \\
+\mathrm{Cost}_{5\mathrm{yr}}(c') &\le \mathrm{Cost}_{5\mathrm{yr}}(c^*),
+\end{aligned}
 \end{equation}
 with at least one strict inequality. The non-dominated set $\mathcal{C}^*$ delineates the optimal efficiency frontier.
 \end{definition}
@@ -190,50 +198,58 @@ with at least one strict inequality. The non-dominated set $\mathcal{C}^*$ delin
 \subsection{Stochastic Monte Carlo League Tournament Formulation}
 To evaluate the downstream macroeconomic consequences of recruitment choices, we model the 38-fixture domestic league campaign via stochastic simulation. For each match fixture $k \in \{1, \dots, 38\}$, the simulated points outcome $Y_k \in \{0, 1, 3\}$ is drawn from a non-homogeneous multinomial distribution parameterized by expected points $\mu_k$:
 \begin{equation}
-\mu_k = \bar{P}_{\mathcal{C}} + \Delta\text{PPG}_{\text{void}} \cdot (1 - \text{MatchScore}(s, c) / 100)
+\mu_k = \bar{P}_{\mathcal{C}} + \Delta\mathrm{PPG}_{\mathrm{void}} \cdot \left(1 - \frac{\operatorname{MatchScore}(s, c)}{100}\right),
 \end{equation}
 \begin{equation}
-P(Y_k = 3) = \frac{\mu_k}{3}(1 - \gamma), \quad P(Y_k = 1) = \gamma, \quad P(Y_k = 0) = 1 - P(Y_k = 3) - \gamma
+P(Y_k = y) = \begin{cases}
+\frac{\mu_k}{3}(1 - \gamma), & y = 3 \quad (\text{Win}), \\
+\gamma, & y = 1 \quad (\text{Draw}), \\
+1 - \frac{\mu_k}{3}(1 - \gamma) - \gamma, & y = 0 \quad (\text{Loss}),
+\end{cases}
 \end{equation}
 where $\gamma = 0.24$ represents the empirical European draw rate. Over $M = 10,000$ independent full-season realizations, we evaluate:
-\begin{equation}
-P_{\text{title}} = \frac{1}{M}\sum_{m=1}^M \mathbb{I}\left(\sum_{k=1}^{38} Y_{k}^{(m)} \ge 86\right), \quad P_{\text{UCL}} = \frac{1}{M}\sum_{m=1}^M \mathbb{I}\left(\sum_{k=1}^{38} Y_{k}^{(m)} \ge 71\right)
-\end{equation}
+\begin{align}
+P_{\mathrm{title}} &= \frac{1}{M}\sum_{m=1}^M \mathbb{I}\left(\sum_{k=1}^{38} Y_{k}^{(m)} \ge 86\right), \\
+P_{\mathrm{UCL}} &= \frac{1}{M}\sum_{m=1}^M \mathbb{I}\left(\sum_{k=1}^{38} Y_{k}^{(m)} \ge 71\right).
+\end{align}
 The financial revenue impact is computed as:
 \begin{equation}
-\Delta\text{Revenue} = \left[ P_{\text{UCL}}(c) - P_{\text{UCL}}(\text{void}) \right] \cdot \text{Rev}_{\text{UCL}} + \left[ \bar{Y}(c) - \bar{Y}(\text{void}) \right] \cdot \text{Rev}_{\text{pt}}
+\begin{aligned}
+\Delta\mathrm{Revenue} = & \left[ P_{\mathrm{UCL}}(c) - P_{\mathrm{UCL}}(\mathrm{void}) \right] \cdot \mathrm{Rev}_{\mathrm{UCL}} \\
+& + \left[ \bar{Y}(c) - \bar{Y}(\mathrm{void}) \right] \cdot \mathrm{Rev}_{\mathrm{pt}},
+\end{aligned}
 \end{equation}
-where $\text{Rev}_{\text{UCL}} = \text{\texteuro70.0M}$ (base European participation and market pool distribution) and $\text{Rev}_{\text{pt}} = \text{\texteuro1.8M}$ (merit-based domestic broadcasting distribution per league point).
+where $\mathrm{Rev}_{\mathrm{UCL}} = \text{\texteuro70.0M}$ (base European participation and market pool distribution) and $\mathrm{Rev}_{\mathrm{pt}} = \text{\texteuro1.8M}$ (merit-based domestic broadcasting distribution per league point).
 
 \begin{algorithm}[t]
 \caption{Dual-Engine Tactical Replacement \& Regulatory Arbitrage Optimization}
 \label{alg:master}
 \begin{algorithmic}[1]
-\REQUIRE Departed Entity $s$, Candidate Pool $\mathcal{P}$, Matrix $\mathbf{W}_{\text{role}}$, Horizon $H$, Budget Ratio $B$, Max Age $A$
-\ENSURE Non-Dominated Pareto Candidate Set $\mathcal{C}^*$, Financial Headroom $\Delta\text{Headroom}$, Monte Carlo Projection
-\STATE $\Delta\text{PPG}_{\text{pred}} \leftarrow \text{PredictMLShock}(\mathbf{x}_s, \rho_s, \bar{P}_{\mathcal{C}}, \text{Fee}_s)$
-\STATE $V_{\text{void}}(s) \leftarrow \text{ComputeEquation1}(\mathbf{x}_s, \rho_s, \Delta\text{PPG}_{\text{pred}})$
-\STATE $\mathcal{C}_{\text{filtered}} \leftarrow \emptyset$
+\REQUIRE Departed Entity $s$, Candidate Pool $\mathcal{P}$, Matrix $\mathbf{W}_{\mathrm{role}}$, Horizon $H$, Budget Ratio $B$, Max Age $A$
+\ENSURE Non-Dominated Pareto Candidate Set $\mathcal{C}^*$, Financial Headroom $\Delta\mathrm{Headroom}$, Monte Carlo Projection
+\STATE $\Delta\mathrm{PPG}_{\mathrm{pred}} \leftarrow \operatorname{PredictMLShock}(\mathbf{x}_s, \rho_s, \bar{P}_{\mathcal{C}}, \mathrm{Fee}_s)$
+\STATE $V_{\mathrm{void}}(s) \leftarrow \operatorname{ComputeEquation3}(\mathbf{x}_s, \rho_s, \Delta\mathrm{PPG}_{\mathrm{pred}})$
+\STATE $\mathcal{C}_{\mathrm{filtered}} \leftarrow \emptyset$
 \FORALL{$c \in \mathcal{P} \setminus \{s\}$}
-    \IF{$c.\text{age} \le A$ \textbf{and} $c.\text{fee} \le B \cdot \text{Fee}_s$}
-        \STATE $\text{Sim}_{\text{tactical}}(s, c) \leftarrow \frac{(\mathbf{W}_{\text{role}} \mathbf{x}_s) \cdot (\mathbf{W}_{\text{role}} \mathbf{x}_c)}{\|\mathbf{W}_{\text{role}} \mathbf{x}_s\|_2 \|\mathbf{W}_{\text{role}} \mathbf{x}_c\|_2}$
-        \STATE $\text{MatchScore}(s, c) \leftarrow \text{EvaluateCompositeScore}(\text{Sim}_{\text{tactical}}, c.\text{age}, H)$
-        \STATE $\text{Cost}_{5\text{yr}}(c) \leftarrow c.\text{fee} + 5 \cdot (c.\text{wage} \times 52)$
-        \STATE $\text{Arbitrage}(s, c) \leftarrow \text{Fee}_s - c.\text{fee}$
-        \STATE $\Delta\text{Headroom}_{\text{Y1}}(s, c) \leftarrow (\text{Fee}_s - \text{NBV}_s) + \text{Wage}_s - \left(\frac{c.\text{fee}}{\min(5, T_c)} + c.\text{wage}\right)$
-        \STATE $\mathcal{C}_{\text{filtered}} \leftarrow \mathcal{C}_{\text{filtered}} \cup \{c\}$
+    \IF{$c.\text{age} \le A$ \textbf{and} $c.\text{fee} \le B \cdot \mathrm{Fee}_s$}
+        \STATE $\operatorname{Sim}(s, c) \leftarrow \frac{(\mathbf{W}_{\mathrm{role}} \mathbf{x}_s)^T (\mathbf{W}_{\mathrm{role}} \mathbf{x}_c)}{\|\mathbf{W}_{\mathrm{role}} \mathbf{x}_s\|_2 \|\mathbf{W}_{\mathrm{role}} \mathbf{x}_c\|_2}$
+        \STATE $\operatorname{Score}(s, c) \leftarrow \operatorname{EvaluateComposite}(\operatorname{Sim}, c.\text{age}, H)$
+        \STATE $\mathrm{Cost}_{5\mathrm{yr}}(c) \leftarrow c.\text{fee} + 5 \cdot (c.\text{wage} \times 52)$
+        \STATE $\mathrm{Arb}(s, c) \leftarrow \mathrm{Fee}_s - c.\text{fee}$
+        \STATE $\Delta\mathrm{Headroom}(s, c) \leftarrow \mathrm{Gain}_{\mathrm{disp}}(s) + \mathrm{Wage}_s - \mathrm{Charge}_{\mathrm{ann}}(c)$
+        \STATE $\mathcal{C}_{\mathrm{filtered}} \leftarrow \mathcal{C}_{\mathrm{filtered}} \cup \{c\}$
     \ENDIF
 \ENDFOR
-\STATE Sort $\mathcal{C}_{\text{filtered}}$ in ascending order of $\text{Cost}_{5\text{yr}}$
+\STATE Sort $\mathcal{C}_{\mathrm{filtered}}$ in ascending order of $\mathrm{Cost}_{5\mathrm{yr}}$
 \STATE $\mathcal{C}^* \leftarrow \emptyset, \quad \text{maxScore} \leftarrow -1$
-\FORALL{$c \in \mathcal{C}_{\text{filtered}}$}
-    \IF{$\text{MatchScore}(s, c) > \text{maxScore}$}
+\FORALL{$c \in \mathcal{C}_{\mathrm{filtered}}$}
+    \IF{$\operatorname{Score}(s, c) > \text{maxScore}$}
         \STATE $\mathcal{C}^* \leftarrow \mathcal{C}^* \cup \{c\}$
-        \STATE $\text{maxScore} \leftarrow \text{MatchScore}(s, c)$
+        \STATE $\text{maxScore} \leftarrow \operatorname{Score}(s, c)$
     \ENDIF
 \ENDFOR
-\STATE $\mathcal{S}_{\text{sim}} \leftarrow \text{ExecuteMonteCarlo10000}(\bar{P}_{\mathcal{C}}, \Delta\text{PPG}_{\text{pred}}, \text{TopPick}(\mathcal{C}^*))$
-\RETURN $\mathcal{C}^*, \Delta\text{Headroom}_{\text{Y1}}, \mathcal{S}_{\text{sim}}$
+\STATE $\mathcal{S}_{\mathrm{sim}} \leftarrow \operatorname{ExecuteMonteCarlo}(\bar{P}_{\mathcal{C}}, \Delta\mathrm{PPG}_{\mathrm{pred}}, \operatorname{TopPick}(\mathcal{C}^*))$
+\RETURN $\mathcal{C}^*, \Delta\mathrm{Headroom}, \mathcal{S}_{\mathrm{sim}}$
 \end{algorithmic}
 \end{algorithm}
 
