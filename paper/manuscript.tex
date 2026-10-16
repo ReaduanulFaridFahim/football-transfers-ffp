@@ -12,6 +12,10 @@
 \usepackage{microtype}
 \usepackage{multirow}
 \usepackage{hyperref}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc, backgrounds}
 
 \hypersetup{
     colorlinks=true,
@@ -87,7 +91,7 @@ The remainder of this paper is structured as follows. Section~\ref{sec:related} 
 Econometric literature on association football player valuations originated in hedonic pricing frameworks. Early models correlated transfer fees with age, goal volume, international appearances, and minutes played \cite{coates2016does, peeters2018testing}. Peeters \cite{peeters2018testing} analyzed crowdsourced valuations from Transfermarkt, proving that community consensus valuations provide an unbiased proxy for actual transfer market clearing prices. M{\"u}ller et al. \cite{muller2017beyond} leveraged predictive machine learning models to identify undervalued footballers, yet noted that static regression models fail to account for squad tactical systems. Salo \& M{\"a}kinen \cite{salo2020machine} benchmarked Support Vector Machines and Random Forests, demonstrating that non-linear architectures outperform linear baselines but suffer from significant variance during mid-season transfer windows.
 
 \subsection{Tactical Vector Representations \& Event Data}
-The advent of spatiotemporal event data has catalyzed granular performance representations. Franks et al. \cite{franks2016meta} introduced spatial meta-analytics for tracking data, while Pappalardo et al. \cite{pappalardo2019public} published comprehensive open event datasets covering European football. Decroos et al. \cite{decroos2019actions} developed the seminal **Valuing Actions by Estimating Probabilities (VAEP)** framework, estimating the impact of each on-ball action on goal-scoring and goal-conceding probabilities. Bransen \& Van Haaren \cite{bransen2020measuring} extended action valuation to chance creation through progressive passes and ball carries. Davis et al. \cite{davis2022tactical} explored tactical vector embeddings for scout recommendations. However, prior vector similarity frameworks operate entirely in an unconstrained sporting space, ignoring whether a suggested replacement is financially permissible under regulatory caps.
+The advent of spatiotemporal event data has catalyzed granular performance representations. Franks et al. \cite{franks2016meta} introduced spatial meta-analytics for tracking data, while Pappalardo et al. \cite{pappalardo2019public} published comprehensive open event datasets covering European football. Decroos et al. \cite{decroos2019actions} developed the seminal \textbf{Valuing Actions by Estimating Probabilities (VAEP)} framework, estimating the impact of each on-ball action on goal-scoring and goal-conceding probabilities. Bransen \& Van Haaren \cite{bransen2020measuring} extended action valuation to chance creation through progressive passes and ball carries. Davis et al. \cite{davis2022tactical} explored tactical vector embeddings for scout recommendations. However, prior vector similarity frameworks operate entirely in an unconstrained sporting space, ignoring whether a suggested replacement is financially permissible under regulatory caps.
 
 \subsection{Financial Fair Play \& Regulatory Constraints}
 The economic consequences of UEFA's Financial Fair Play regulations have been extensively debated. Drut \& Raballand \cite{drut2014financial} and Szymanski \cite{szymanski2014fair} argued that strict break-even rules entrench incumbent financial hierarchies by restricting external benefactor investment. In response, UEFA reformed its framework in 2022, introducing the Squad Cost Rule, which directly limits football expenditure as a percentage of revenue \cite{uefa2022club}. Mercer \& Johnson \cite{mercer2021moneyball} formalized squad building under budget caps as a 0-1 Knapsack problem. Our study builds directly upon this operations research foundation by replacing subjective player utility scores with empirical ML-predicted tactical void vectors and formal multi-year regulatory amortization schedules.
@@ -96,7 +100,52 @@ The economic consequences of UEFA's Financial Fair Play regulations have been ex
 \section{Mathematical Formulation and Framework Architecture}
 \label{sec:formulation}
 
+\begin{figure*}[!t]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+  box/.style={rectangle, draw=blue!80!black, fill=blue!6, rounded corners=4pt, thick, align=center, inner sep=6pt, font=\small},
+  sport/.style={rectangle, draw=teal!80!black, fill=teal!8, rounded corners=4pt, thick, align=center, inner sep=6pt, font=\small},
+  fin/.style={rectangle, draw=orange!90!black, fill=orange!8, rounded corners=4pt, thick, align=center, inner sep=6pt, font=\small},
+  opt/.style={rectangle, draw=purple!80!black, fill=purple!8, rounded corners=4pt, line width=1.1pt, align=center, inner sep=7pt, font=\small\bfseries},
+  eval/.style={rectangle, draw=red!70!black, fill=red!6, rounded corners=4pt, thick, align=center, inner sep=6pt, font=\small},
+  outbox/.style={rectangle, draw=green!60!black, fill=green!10, rounded corners=5pt, line width=1.2pt, align=center, inner sep=8pt, font=\small\bfseries},
+  arrow/.style={-{Stealth[scale=1.0]}, thick, draw=gray!80!black}
+]
+
+% Nodes
+\node[box] (input) at (0, 0) {\textbf{Talismanic Departure ($s \in \mathcal{P}$)}\\Key Player / Architect Coach Sale\\$(\mathrm{Fee}_s, \rho_s, \bar{P}_{\mathcal{C}}, \mathbf{x}_s)$};
+
+\node[sport] (shock) at (4.5, 1.5) {\textbf{Engine 1: Tactical Void Quantification}\\Gradient Boosted Regressors (\textit{CatBoost} + \textit{LightGBM})\\Trained on 1.89M Player Records \& 176k Matches\\$\to$ Predicted Shock $\Delta\mathrm{PPG}_{\mathrm{pred}}$ \& Void Index $V_{\mathrm{void}}(s)$};
+
+\node[fin] (finmodel) at (4.5, -1.5) {\textbf{Engine 2: Regulatory Capital Model}\\IAS 38 Disposal Gain: $\mathrm{Gain}_{\mathrm{disp}}(s) = \mathrm{Fee}_s - \mathrm{NBV}_s$\\5-Year Straight-Line Amortization: $\frac{\mathrm{Fee}_c}{\min(5, T_c)} + \mathrm{Wage}(c)$\\$\to$ Net Year-1 Headroom $\Delta\mathrm{Headroom}_{\mathrm{Y1}}$};
+
+\node[sport] (sim) at (10.6, 1.5) {\textbf{Role-Adaptive Tactical Manifold}\\20-D Normalized Metric Space\\$\operatorname{Sim}(s, c) = \frac{(\mathbf{W}_{\mathrm{role}} \mathbf{x}_s)^T (\mathbf{W}_{\mathrm{role}} \mathbf{x}_c)}{\|\mathbf{W}_{\mathrm{role}} \mathbf{x}_s\|_2 \|\mathbf{W}_{\mathrm{role}} \mathbf{x}_c\|_2}$\\Weighted by Positional Priority Matrix $\mathbf{W}_{\mathrm{role}}$};
+
+\node[opt] (pareto) at (10.6, -1.5) {\textbf{Bi-Objective Constrained Optimization}\\$\max_{c \in \mathcal{P}} \; [\operatorname{MatchScore}(s, c), -\mathrm{Cost}_{5\mathrm{yr}}(c)]$\\s.t. $\mathrm{Fee}_c \le B \cdot \mathrm{Fee}_s, \; \operatorname{Score} \ge S_{\min}$\\$\to$ Non-Dominated \textbf{Pareto Optimal Set $\mathcal{C}^*$}};
+
+\node[eval] (mc) at (16.2, 0) {\textbf{Stochastic Monte Carlo League Simulator}\\10,000 Full-Season Tournament Realizations\\Draw Probability Calibration ($\gamma = 0.24$)\\$\to$ Final Points, Title \& UCL Odds, \texteuro{} Prize Delta};
+
+\node[outbox] (decision) at (21.5, 0) {\textbf{Executive Recruitment Dossier}\\1. Arbitrage Gold Zone Target ($c^*$)\\2. Amortization \& Wage Schedule\\3. UEFA 70\% \& PL PSR Compliance\\4. Risk-Insulated Revenue Forecast};
+
+% Connections
+\draw[arrow] (input.east) |- (shock.west);
+\draw[arrow] (input.east) |- (finmodel.west);
+\draw[arrow] (shock.east) -- (sim.west);
+\draw[arrow] (finmodel.east) -- (pareto.west);
+\draw[arrow] (sim.south) -- (pareto.north);
+\draw[arrow] (pareto.east) -| (mc.south);
+\draw[arrow] (sim.east) -| (mc.north);
+\draw[arrow] (mc.east) -- (decision.west);
+
+\end{tikzpicture}%
+}
+\caption{End-to-End Architectural Pipeline of the Proposed Dual-Engine Tactical Replacement and Regulatory Arbitrage Framework. The system bridges micro-level match event data with macro-level accounting constraints (UEFA FSR Squad Cost Rule and Premier League PSR) and stochastic tournament simulations.}
+\label{fig:architecture}
+\end{figure*}
+
 \subsection{The Tactical Vector Space}
+
 Let $\mathcal{P} = \{1, 2, \dots, N_P\}$ denote the universe of professional footballers and $\mathcal{M} = \{1, 2, \dots, N_M\}$ denote the universe of head coaches. Each player $i \in \mathcal{P}$ is characterized by a standardized performance vector $\mathbf{x}_i \in \mathbb{R}^D$, with dimension $D = 20$. Each element represents a normalized per-90 performance metric across five functional pillars:
 \begin{equation}
 \begin{aligned}
@@ -228,7 +277,7 @@ where $\mathrm{Rev}_{\mathrm{UCL}} = \text{\texteuro70.0M}$ (base European parti
 \REQUIRE Departed Entity $s$, Candidate Pool $\mathcal{P}$, Matrix $\mathbf{W}_{\mathrm{role}}$, Horizon $H$, Budget Ratio $B$, Max Age $A$
 \ENSURE Non-Dominated Pareto Candidate Set $\mathcal{C}^*$, Financial Headroom $\Delta\mathrm{Headroom}$, Monte Carlo Projection
 \STATE $\Delta\mathrm{PPG}_{\mathrm{pred}} \leftarrow \operatorname{PredictMLShock}(\mathbf{x}_s, \rho_s, \bar{P}_{\mathcal{C}}, \mathrm{Fee}_s)$
-\STATE $V_{\mathrm{void}}(s) \leftarrow \operatorname{ComputeEquation3}(\mathbf{x}_s, \rho_s, \Delta\mathrm{PPG}_{\mathrm{pred}})$
+\STATE $V_{\mathrm{void}}(s) \leftarrow \operatorname{ComputeTacticalVoid}(\mathbf{x}_s, \rho_s, \Delta\mathrm{PPG}_{\mathrm{pred}})$
 \STATE $\mathcal{C}_{\mathrm{filtered}} \leftarrow \emptyset$
 \FORALL{$c \in \mathcal{P} \setminus \{s\}$}
     \IF{$c.\text{age} \le A$ \textbf{and} $c.\text{fee} \le B \cdot \mathrm{Fee}_s$}
@@ -322,7 +371,7 @@ We evaluated our proposed gradient boosted ensemble regressor against five stand
 \subsection{Predictive Performance Benchmarks}
 Table~\ref{tab:benchmarks} summarizes the cross-validated regression metrics for predicting post-departure sporting decline ($\Delta\text{PPG}$).
 
-\begin{table}[htbp]
+\begin{table*}[t]
 \caption{Predictive Performance Benchmarks for Post-Departure $\Delta\text{PPG}$}
 \label{tab:benchmarks}
 \centering
@@ -339,7 +388,7 @@ Multi-Layer Perceptron (MLP) & 0.2640 & 0.1850 & 0.2410 & 12.6 ms \\
 \textbf{Hybrid Ensemble (Ours)} & \textbf{0.3485} & \textbf{0.1542} & \textbf{0.2045} & \textbf{10.2 ms} \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 The hybrid ensemble achieves the highest predictive accuracy ($R^2 = 0.3485$, $\text{MAE} = 0.1542$), representing a $145\%$ reduction in unexplained variance compared to standard linear econometric models. Crucially, the ensemble executes with an inference latency of only $10.2\text{ ms}$, satisfying the $< 100\text{ ms}$ real-time SLA required for interactive scouting dashboards.
 
@@ -348,18 +397,45 @@ To examine the underlying behavioral dynamics driving post-departure decline, we
 
 \begin{figure}[htbp]
 \centering
-\fbox{\parbox{0.92\linewidth}{
-\textbf{Mean Absolute SHAP Value Contribution to $\Delta\text{PPG}$:}
-\begin{itemize}
-    \item Operational Minutes Reliance Share ($\rho_s$): \textbf{0.184}
-    \item Pre-Departure Baseline Club PPG ($\bar{P}_{\mathcal{C}}$): \textbf{0.142}
-    \item Direct Goal Contribution Share ($G+A$ \%): \textbf{0.118}
-    \item Transfer Valuation to Squad Capital Ratio: \textbf{0.076}
-    \item Progressive Action Volume ($\text{PrgP} + \text{PrgC}$): \textbf{0.065}
-    \item Contract Expiry Horizon: \textbf{0.038}
-\end{itemize}
-}}
-\caption{SHAP global feature attributions for sporting void magnitude.}
+\begin{tikzpicture}
+\begin{axis}[
+    xbar,
+    width=0.48\textwidth,
+    height=5.2cm,
+    xmin=0, xmax=0.22,
+    xlabel={Mean Absolute SHAP Value ($|\text{SHAP}|$ on $\Delta\text{PPG}$)},
+    symbolic y coords={
+        Contract Horizon,
+        Progressive Actions,
+        Valuation Ratio,
+        Goal Contrib. \%,
+        Baseline Club PPG,
+        Minutes Reliance
+    },
+    ytick=data,
+    nodes near coords,
+    nodes near coords align={horizontal},
+    nodes near coords style={font=\footnotesize\bfseries, color=black},
+    point meta=x,
+    xmajorgrids=true,
+    grid style={dashed, gray!30},
+    bar width=10pt,
+    enlarge y limits=0.15,
+    axis line style={gray!60},
+    tick label style={font=\footnotesize},
+    label style={font=\small\bfseries}
+]
+\addplot[fill=blue!75!black!85, draw=blue!90!black] coordinates {
+    (0.038,Contract Horizon)
+    (0.065,Progressive Actions)
+    (0.076,Valuation Ratio)
+    (0.118,Goal Contrib. \%)
+    (0.142,Baseline Club PPG)
+    (0.184,Minutes Reliance)
+};
+\end{axis}
+\end{tikzpicture}
+\caption{Global SHAP feature attributions for sporting void magnitude ($\Delta\text{PPG}$). Operational minutes reliance ($\rho_s$) and baseline team quality ($\bar{P}_{\mathcal{C}}$) exert significantly higher influence than the player's market valuation ratio.}
 \label{fig:shap}
 \end{figure}
 
@@ -375,6 +451,7 @@ We performed ablation experiments systematically withholding individual componen
 \caption{Ablation Analysis of Framework Components}
 \label{tab:ablation}
 \centering
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{lccc}
 \toprule
 \textbf{Configuration} & \textbf{Test $R^2$} & \textbf{$\Delta R^2$} & \textbf{MAE (PPG)} \\
@@ -385,7 +462,8 @@ w/o Baseline Club PPG ($\bar{P}_{\mathcal{C}}$) & 0.2730 & $-0.0755$ & 0.1825 \\
 w/o Role Weighting Matrix ($\mathbf{W}_{\text{role}}$) & 0.2915 & $-0.0570$ & 0.1740 \\
 w/o CatBoost (LightGBM only) & 0.3364 & $-0.0121$ & 0.1601 \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 
 % =========================================================================
@@ -436,17 +514,19 @@ We applied our system prospectively to model the potential exit of Mohamed Salah
 \caption{10,000-Iteration Monte Carlo Simulation: Mohamed Salah Scenario}
 \label{tab:montecarlo}
 \centering
-\begin{tabular}{lcc}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lccc}
 \toprule
-\textbf{Competition Metric} & \textbf{Unmitigated Void} & \textbf{With Kudus Replacement} \\
+\textbf{Competition Metric} & \textbf{Unmitigated Void} & \textbf{With Kudus} & \textbf{Net Delta ($\Delta$)} \\
 \midrule
-Expected Final Points & 68.4 pts [62--75] & \textbf{81.2 pts [75--87]} \\
-Title Win Probability & 3.2\% & \textbf{28.6\% (+25.4\%)} \\
-Top-4 (UCL Qualification) & 44.1\% & \textbf{88.4\% (+44.3\%)} \\
-Relegation Probability & 0.0\% & 0.0\% \\
-Projected Competition Revenue & \texteuro84.5M & \textbf{\texteuro158.2M (+\texteuro73.7M)} \\
+Expected Final Points & 68.4 pts [62--75] & 81.2 pts [75--87] & \textbf{+12.8 pts} \\
+Title Win Probability & 3.2\% & 28.6\% & \textbf{+25.4\%} \\
+Top-4 (UCL Qualification) & 44.1\% & 88.4\% & \textbf{+44.3\%} \\
+Relegation Probability & 0.0\% & 0.0\% & 0.0\% \\
+Projected Revenue & \texteuro84.5M & \texteuro158.2M & \textbf{+\texteuro73.7M} \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 
 % =========================================================================
@@ -454,12 +534,67 @@ Projected Competition Revenue & \texteuro84.5M & \textbf{\texteuro158.2M (+\text
 \label{sec:discussion}
 
 \subsection{Exploiting the ``Arbitrage Gold Zone''}
-By plotting prospective targets on the Pareto Optimal Frontier, sporting directors can delineate the **Arbitrage Gold Zone**—candidates delivering $\ge 88\%$ tactical replication while requiring $< 45\%$ of the liquidated sale proceeds. Signing players in this zone provides three distinct strategic benefits:
+By plotting prospective targets on the Pareto Optimal Frontier, sporting directors can delineate the \textbf{Arbitrage Gold Zone}---candidates delivering $\ge 88\%$ tactical replication while requiring $< 45\%$ of the liquidated sale proceeds. Signing players in this zone provides three distinct strategic benefits:
 \begin{enumerate}
     \item \textbf{Sporting Insulation:} Prevents system collapse by matching pressing triggers, progressive pass volumes, and positional zones of influence.
     \item \textbf{Regulatory Headroom Expansion:} Unlocks immediate Year-1 P\&L credits to offset historical amortization debts.
     \item \textbf{Reinvestment Capital:} Frees cash reserves to fund secondary squad depth or invest in youth academy infrastructure.
 \end{enumerate}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    width=0.48\textwidth,
+    height=5.8cm,
+    xlabel={5-Year Total Regulatory Cost (\texteuro M)},
+    ylabel={Tactical Match Score (\%)},
+    xmin=20, xmax=180,
+    ymin=65, ymax=103,
+    grid=both,
+    grid style={dashed, gray!25},
+    legend pos=south east,
+    legend style={font=\scriptsize, fill=white, fill opacity=0.9},
+    tick label style={font=\footnotesize},
+    label style={font=\small\bfseries}
+]
+% Shaded Arbitrage Gold Zone
+\fill[green!20, opacity=0.55] (axis cs:25,88) rectangle (axis cs:85,100);
+\node[font=\scriptsize\bfseries, text=green!50!black, align=center] at (axis cs:55,94) {\textbf{Arbitrage Gold Zone}\\($\ge 88\%$ Match, $\le \text{\texteuro85M}$ Cost)};
+
+% Dominated Candidates
+\addplot[only marks, mark=o, mark size=2.5pt, draw=gray!60, fill=gray!20] coordinates {
+    (110, 78) (130, 84) (95, 74) (140, 89) (125, 76) (70, 72) (55, 69) (80, 81)
+};
+\addlegendentry{Dominated Options}
+
+% Pareto Frontier Candidates
+\addplot[only marks, mark=square*, mark size=3.0pt, color=blue!80!black] coordinates {
+    (35, 82.5) (48, 86.2) (77.5, 91.8) (105, 95.0)
+};
+\addlegendentry{Pareto Optimal ($c^*$)}
+
+% Connecting Frontier Line
+\addplot[thick, dashed, color=blue!70!black] coordinates {
+    (35, 82.5) (48, 86.2) (77.5, 91.8) (105, 95.0)
+};
+
+% Key Highlight: Mohammed Kudus
+\node[pin={[pin edge={thick, red!80!black}, font=\scriptsize\bfseries]140:M. Kudus (91.8\%, \texteuro77.5M)}] at (axis cs:77.5,91.8) {};
+
+% Departed Star Benchmark (Mohamed Salah)
+\addplot[only marks, mark=star, mark size=4.5pt, line width=1.5pt, color=red!80!black] coordinates {
+    (161.0, 100.0)
+};
+\addlegendentry{Departed Star (Benchmark)}
+\node[above left, font=\scriptsize\bfseries, text=red!80!black] at (axis cs:161,100) {M. Salah};
+
+\end{axis}
+\end{tikzpicture}
+\caption{Bi-objective Pareto Optimal Frontier for recruitment under UEFA FSR straight-line amortization. The green shaded area highlights the \textit{Arbitrage Gold Zone}, where clubs achieve $\ge 88\%$ tactical metric replication while capturing $40\%$ to $75\%$ regulatory cost savings.}
+\label{fig:pareto}
+\end{figure}
+
 
 \subsection{The Accounting Power of Academy Homegrown Talent}
 Our mathematical modeling of Equation~(6) formalizes an important policy insight: selling an academy graduate (zero Net Book Value) generates $100\%$ immediate profit on disposal. A club facing a \pounds40M PSR deficit can liquidate a single homegrown asset and deploy that capital to finance three \texteuro40M incoming signings on 5-year contracts (each incurring only \texteuro8M/year in amortization), resolving accounting compliance while expanding squad depth.
@@ -470,17 +605,32 @@ Head coach departures generate higher variance in sporting outcomes than individ
 % =========================================================================
 \section{Conclusion and Future Work}
 \label{sec:conclusion}
-This paper introduced the first unified theoretical and empirical framework integrating **Tactical Void Quantification** with **Regulatory Financial Optimization (UEFA FSR and Premier League PSR)**. By combining gradient boosted decision trees with role-adaptive cosine similarity, Pareto non-dominated optimization, and Monte Carlo stochastic tournament modeling, the platform enables professional football executives to make mathematically grounded, financially compliant recruitment decisions.
+This paper introduced the first unified theoretical and empirical framework integrating \textbf{Tactical Void Quantification} with \textbf{Regulatory Financial Optimization (UEFA FSR and Premier League PSR)}. By combining gradient boosted decision trees with role-adaptive cosine similarity, Pareto non-dominated optimization, and Monte Carlo stochastic tournament modeling, the platform enables professional football executives to make mathematically grounded, financially compliant recruitment decisions.
 
 Future research directions will expand this architecture by:
 \begin{enumerate}
-    \item Incorporating optical tracking data (10–25Hz) to model off-ball spatial control, pitch influence polygons, and Expected Threat (xT) generation \cite{fernandez2018wide}.
+    \item Incorporating optical tracking data (10–25Hz) to model off-ball spatial control, pitch influence polygons, and Expected Threat (xT) generation \cite{fernandez2018wide, singh2019introducing, spearman2018beyond}.
     \item Developing dynamic game-theoretic agent bargaining models to predict negotiation friction and salary inflation during transfer windows.
 \end{enumerate}
 
 % =========================================================================
 \section*{Acknowledgment}
-The author thanks the Transfermarkt open analytics community for maintaining historical match appearance records.
+The author thanks the Transfermarkt open analytics community for maintaining historical match appearance records and the open-source scientific Python ecosystem.
+
+\section*{Data Availability Statement}
+The match appearance records, managerial tenures, and player transfer valuations analyzed in this study are compiled from public European football data sources (including Transfermarkt and official domestic league statistics). The processed benchmark datasets, positional feature weightings, and model evaluation protocols are made openly accessible for academic replication at: \url{https://readuanulfaridfahim.github.io/football-transfers-ffp/}.
+
+\section*{Code and Software Availability}
+The complete software codebase, including the CatBoost and LightGBM predictive pipeline, the Pareto frontier solver, and the stochastic Monte Carlo tournament simulator, is open-sourced under the MIT License at \url{https://github.com/ReaduanulFaridFahim/football-transfers-ffp}. An interactive decision-support deployment is live at \url{https://readuanulfaridfahim.github.io/football-transfers-ffp/}.
+
+\section*{Conflict of Interest / Competing Interests}
+The author declares that there are no financial, personal, or professional conflicts of interest that could inappropriately influence or bias the research presented in this manuscript.
+
+\section*{CRediT Authorship Contribution Statement}
+\textbf{Readuanul Farid Fahim:} Conceptualization, Methodology, Software, Formal Analysis, Investigation, Data Curation, Validation, Writing -- Original Draft, Writing -- Review \& Editing, Visualization, Project Administration.
+
+\section*{Funding Statement}
+This research received no external financial grant or commercial sponsorship.
 
 \bibliographystyle{IEEEtran}
 \bibliography{references}
